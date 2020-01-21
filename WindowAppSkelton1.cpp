@@ -154,5 +154,4 @@ INT_PTR CALLBACK Application::About(HWND hDlg, UINT message, WPARAM wParam, LPAR
 
 Application::~Application()
 {
-
 }
