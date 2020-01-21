@@ -15,11 +15,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: ここにコードを挿入してください。
     Application& app = Application::GetInstance();
+    app.Run(hInstance, nCmdShow);
+}
 
-    app.MyRegisterClass(hInstance);
+int Application::Run(HINSTANCE hInstance, int nCmdShow)
+{
+    this->MyRegisterClass(hInstance);
 
     // アプリケーション初期化の実行:
-    if (!app.InitInstance(nCmdShow))
+    if (!this->InitInstance(nCmdShow))
     {
         return FALSE;
     }
