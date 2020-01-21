@@ -8,6 +8,7 @@ class Application {
 public:
     Application();
     ~Application();
+    int Run(HINSTANCE hInst, int nCmdShow);
     ATOM MyRegisterClass(HINSTANCE hInstance);
     BOOL InitInstance(int nCmdShow);
     static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
