@@ -4,18 +4,8 @@
 #include "framework.h"
 #include "WindowAppSkelton1.h"
 
-#define MAX_LOADSTRING 100
-
-// グローバル変数:
-HINSTANCE _hInst;                                // 現在のインターフェイス
-WCHAR _szTitle[MAX_LOADSTRING];                  // タイトル バーのテキスト
-WCHAR _szWindowClass[MAX_LOADSTRING];            // メイン ウィンドウ クラス名
-
-// このコード モジュールに含まれる関数の宣言を転送します:
-ATOM MyRegisterClass(HINSTANCE hInstance);
-BOOL InitInstance(HINSTANCE, int);
-LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
+// グローバル変数
+Application Application::_instance;
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -24,14 +14,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: ここにコードを挿入してください。
+    Application& app = Application::GetInstance();
 
-    // グローバル文字列を初期化する
-    LoadStringW(hInstance, IDS_APP_TITLE, _szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_WINDOWAPPSKELTON1, _szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+    app.MyRegisterClass(hInstance);
 
     // アプリケーション初期化の実行:
-    if (!InitInstance (hInstance, nCmdShow))
+    if (!app.InitInstance(nCmdShow))
     {
         return FALSE;
     }
@@ -50,73 +38,86 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    return (int) msg.wParam;
+    return (int)msg.wParam;
 }
 
-ATOM MyRegisterClass(HINSTANCE hInstance)
+Application::Application()
 {
+    this->_hInst = NULL;
+    this->_szTitle[0] = 0x00;
+    this->_szWindowClass[0] = 0x00;
+}
+
+ATOM Application::MyRegisterClass(HINSTANCE hInstance)
+{
+    this->_hInst = hInstance;
+
+    // グローバル文字列を初期化する
+    LoadStringW(this->_hInst, IDS_APP_TITLE, this->_szTitle, MAX_LOADSTRING);
+    LoadStringW(this->_hInst, IDC_WINDOWAPPSKELTON1, this->_szWindowClass, MAX_LOADSTRING);
+
     WNDCLASSEXW wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_WINDOWAPPSKELTON1));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_WINDOWAPPSKELTON1);
-    wcex.lpszClassName  = _szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = &Application::WndProc;
+    wcex.cbClsExtra = 0;
+    wcex.cbWndExtra = 0;
+    wcex.hInstance = this->_hInst;
+    wcex.hIcon = LoadIcon(this->_hInst, MAKEINTRESOURCE(IDI_WINDOWAPPSKELTON1));
+    wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_WINDOWAPPSKELTON1);
+    wcex.lpszClassName = _szWindowClass;
+    wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
     return RegisterClassExW(&wcex);
 }
 
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+BOOL Application::InitInstance(int nCmdShow)
 {
-   _hInst = hInstance;
-   HWND hWnd = CreateWindowW(_szWindowClass, _szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-   return TRUE;
+    HWND hWnd = CreateWindowW(this->_szWindowClass, this->_szTitle, WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, this->_hInst, nullptr);
+    if (!hWnd)
+    {
+        return FALSE;
+    }
+    ShowWindow(hWnd, nCmdShow);
+    UpdateWindow(hWnd);
+    return TRUE;
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Application::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    Application& app = Application::GetInstance();
     switch (message)
     {
     case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // 選択されたメニューの解析:
+        switch (wmId)
         {
-            int wmId = LOWORD(wParam);
-            // 選択されたメニューの解析:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(_hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
+        case IDM_ABOUT:
+            DialogBox(app._hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, &Application::About);
+            break;
+        case IDM_EXIT:
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
         }
-        break;
+    }
+    break;
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: HDC を使用する描画コードをここに追加してください...
-            EndPaint(hWnd, &ps);
-        }
-        break;
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hWnd, &ps);
+        // TODO: HDC を使用する描画コードをここに追加してください...
+        EndPaint(hWnd, &ps);
+    }
+    break;
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
@@ -126,8 +127,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
+Application& Application::GetInstance()
+{
+    return _instance;
+}
+
 // バージョン情報ボックスのメッセージ ハンドラーです。
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK Application::About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     UNREFERENCED_PARAMETER(lParam);
     switch (message)
@@ -144,4 +150,9 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     }
     return (INT_PTR)FALSE;
+}
+
+Application::~Application()
+{
+
 }
